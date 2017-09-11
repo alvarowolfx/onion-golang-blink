@@ -1,4 +1,7 @@
 # Onion Omega 2 + Golang
+![demo](https://cdn-images-1.medium.com/max/800/1*9rGPiCljXHLlMU6fOSmxlw.gif)
+
+![demo2](https://cdn-images-1.medium.com/max/800/1*TSsfa3xzsaL_C4k4Q04Ajw.gif)
 
 Code for the blog post on how to get started with Golang and Onion Omega 2.
 
