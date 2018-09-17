@@ -4,17 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 
-	"github.com/brian-armstrong/gpio"
+	"periph.io/x/periph/conn/gpio"
+	"periph.io/x/periph/conn/gpio/gpioreg"
+	"periph.io/x/periph/host"
 )
 
 // Connect a LED to GPIO11 on the Omega2
-const ledPin = 11
+const ledPin = "11"
 
 var (
-	led      gpio.Pin
+	led      gpio.PinIO
 	ledState bool
 )
 
@@ -35,7 +38,7 @@ func isJsonReq(req *http.Request) bool {
 
 // Endpoint that turn on the LED
 func handleOnRequest(res http.ResponseWriter, req *http.Request) {
-	led.High()
+	led.Out(gpio.High)
 	ledState = true
 	if isJsonReq(req) {
 		sendJsonState(res, "ok", "On")
@@ -46,7 +49,7 @@ func handleOnRequest(res http.ResponseWriter, req *http.Request) {
 
 // Endpoint that turn off the LED
 func handleOffRequest(res http.ResponseWriter, req *http.Request) {
-	led.Low()
+	led.Out(gpio.Low)
 	ledState = false
 	if isJsonReq(req) {
 		sendJsonState(res, "ok", "Off")
@@ -93,7 +96,7 @@ func handleHomeRequest(res http.ResponseWriter, req *http.Request) {
 	t.Execute(res, struct {
 		LedState  string
 		NextState string
-		Pin       int
+		Pin       string
 	}{
 		LedState:  currentLedState,
 		NextState: nextState,
@@ -102,11 +105,16 @@ func handleHomeRequest(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	led = gpio.NewOutput(ledPin, false) // Set GPIO as output
-	defer led.Close()                   // Close when the program ends
+	_, err := host.Init() // Init periph.io
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	onURL := fmt.Sprintf("/led/%d/on", ledPin)
-	offURL := fmt.Sprintf("/led/%d/off", ledPin)
+	led = gpioreg.ByName(ledPin) // Get GPIO
+	defer led.Halt()             // Close when the program ends
+
+	onURL := fmt.Sprintf("/led/%s/on", ledPin)
+	offURL := fmt.Sprintf("/led/%s/off", ledPin)
 
 	// Register functions to handle each url request
 	http.HandleFunc(onURL, handleOnRequest)
